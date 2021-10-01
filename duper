@@ -1,44 +1,90 @@
-repeat wait()
-until game:IsLoaded()
+-- engo#0320/https://engo.plasmic.site Pop it dupe script automatic
+repeat wait() until game:IsLoaded()
+wait(2)
+if game.PlaceId == 7346416636 then
+    local TeleportService = game:GetService("TeleportService")
+    local lplr = game.Players.LocalPlayer
+    local char = lplr.Character
+    local hum = char.Humanoid
+    local hrp = char.HumanoidRootPart
+    local dropped = game.Workspace.Dropped
+    
+    function dupe()
+        wait(0.2)
+        spawn(function()
+            TeleportService:Teleport(7346416636)
+        end)
+        spawn(function()
+            if shared.timing ~= nil then
+                wait(shared.timing)
+            end
+            game:GetService("ReplicatedStorage").RemoteEvents.Jumped:FireServer()
+        end)
+    end
+    
 
-wait(1)
 
-function Get_Board()
-    for i,v in pairs(workspace.Boards:GetChildren()) do
-        if v.Player1.Value == nil and v.Player2.Value == nil then
-            return v
+    function getBoard(plr)
+        for i,v in pairs(game:GetService("Workspace").Boards:GetChildren()) do
+            local plr1 = v.Player1.Value
+            local plr2 = v.Player2.Value
+            if plr then
+                if plr1 == plr or plr2 == plr then
+                    return v
+                end
+            else
+                if plr1 == lplr or plr2 == lplr then
+                    return v
+                end
+            end
         end
     end
-end
 
-function Dupe(board)
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(board.Controls.Close.Pad.CFrame.X, board.Controls.Close.Pad.CFrame.Y + 5, board.Controls.Close.Pad.CFrame.Z)
-    wait(1)
-    game:GetService("ReplicatedStorage").RemoteEvents.Jumped:FireServer()
-    wait(0.22)
-    game.Players.LocalPlayer:Kick()
-    game:GetService('TeleportService'):TeleportToPlaceInstance(game.PlaceId, game.JobId, Player)
-end
-
-function Drop(amt)
-    for i=1, amt do
-        game:GetService("ReplicatedStorage").RemoteEvents.Equip:FireServer(getgenv().item_name)
-        wait(0.7)
-        game:GetService("ReplicatedStorage").RemoteEvents.Drop:FireServer(getgenv().item_name)
-        wait(0.7)
+    function getEmptyBoard()
+        for i,v in pairs(game:GetService("Workspace").Boards:GetChildren()) do
+            local plr1 = v.Player1.Value
+            local plr2 = v.Player2.Value
+            if plr then
+                if plr1 == nil or plr2 == nil then
+                    lplr.Character:MoveTo(v.PrimaryPart.Position)
+                end
+            else
+                if plr1 == nil or plr2 == nil then
+                    lplr.Character:MoveTo(v.PrimaryPart.Position)
+                end
+            end
+        end
     end
-end
 
-local board = Get_Board()
+    function autodrop(b)
+        for i = 1,b do
+            game:GetService("ReplicatedStorage").RemoteEvents.Drop:FireServer(shared.item)
+            wait()
+            antiPickup()
+            wait(0.5)
+            game:GetService("ReplicatedStorage").RemoteEvents.Equip:FireServer(shared.item)
+            wait()
+            antiPickup()
+            wait(0.5)
+            game:GetService("ReplicatedStorage").RemoteEvents.Drop:FireServer(shared.item)
+            wait()
+            antiPickup()
+        end
+    end
 
-local platform = Instance.new("Part")
-platform.Parent = workspace
-platform.Position = Vector3.new(board.MAIN.CFrame.X, board.MAIN.CFrame.Y + 10, board.MAIN.CFrame.Z + 10)
-platform.Anchored = true
-
-wait()
-
-game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(board.MAIN.CFrame.X, board.MAIN.CFrame.Y + 15, board.MAIN.CFrame.Z + 10)
-Drop(15)
-wait(1)
-Dupe(board)
+    function autodupe()
+        repeat
+        getEmptyBoard()
+        wait()
+        until getBoard() ~= nil
+        wait(2)
+        local brd = getBoard()
+        local x = brd:WaitForChild("Controls").Close.Pad
+        wait()
+        autodrop(15)
+        wait(0.2)
+        lplr.Character:MoveTo(x.Position)
+        wait(0.05)
+        dupe()
+    end
+    autodupe()
